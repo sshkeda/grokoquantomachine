@@ -157,6 +157,16 @@ def run_strategy(
     df_data = prices.copy()
     df_data.columns = [c.lower() for c in df_data.columns]
 
+    if "close" not in df_data.columns:
+        raise ValueError("Price data missing 'close' column; cannot run strategy.")
+
+    # Ensure chronological order and drop rows without close prices
+    df_data = df_data.sort_index()
+    df_data = df_data[df_data["close"].notna()]
+
+    if df_data.empty:
+        raise ValueError("Price data is empty after cleaning; cannot run strategy.")
+
     # Clear global trades list and wrap strategy to record trades
     _recorded_trades.clear()
     wrapped_strategy = _create_trade_recording_strategy(strategy_class)
@@ -177,26 +187,14 @@ def run_strategy(
     return_pct = ((final_value - initial_cash) / initial_cash) * 100
     print(f"Strategy Return: {return_pct:.2f}%")
 
-    # Buy and hold comparison
-    class BuyAndHoldStrategy(bt.Strategy):
-        def __init__(self):
-            self.bought = False
+    # Buy and hold comparison - calculate directly from price data
+    # This avoids potential issues with running a second backtrader simulation
+    first_close = float(df_data["close"].iloc[0])
+    last_close = float(df_data["close"].iloc[-1])
 
-        def next(self):
-            if not self.bought:
-                size = int(self.broker.getcash() / self.datas[0].close[0])
-                if size > 0:
-                    self.buy(size=size)
-                    self.bought = True
-
-    cerebro_bh = bt.Cerebro()
-    data_bh = bt.feeds.PandasData(dataname=df_data)  # type: ignore[call-arg]
-    cerebro_bh.adddata(data_bh)
-    cerebro_bh.broker.setcash(initial_cash)
-    cerebro_bh.broker.setcommission(commission=commission)
-    cerebro_bh.addstrategy(BuyAndHoldStrategy)
-    cerebro_bh.run()
-    bh_final_value = cerebro_bh.broker.getvalue()
+    if first_close <= 0:
+        raise ValueError("First close price must be positive to compute buy & hold.")
+    bh_final_value = initial_cash * (last_close / first_close)
     bh_return_pct = ((bh_final_value - initial_cash) / initial_cash) * 100
 
     print(f"\nBuy & Hold Final Value: ${bh_final_value:.2f}")
