@@ -42,15 +42,15 @@ function getDrawdownColor(drawdown: number | null | undefined): string {
   return "text-red-500";
 }
 
-function getWinRateColor(winRate: number | null): string {
-  if (winRate === null) {
+function getWinRateColor(winRate: number | null | undefined): string {
+  if (winRate === null || winRate === undefined) {
     return "text-neutral-500";
   }
   return winRate >= 50 ? "text-green-500" : "text-red-500";
 }
 
-function getProfitFactorColor(pf: number | null): string {
-  if (pf === null) {
+function getProfitFactorColor(pf: number | null | undefined): string {
+  if (pf === null || pf === undefined) {
     return "text-neutral-500";
   }
   if (pf >= 2) {
@@ -224,7 +224,7 @@ export function StrategyChart({ data }: Props) {
           <div
             className={`font-medium ${getWinRateColor(result.win_rate_pct)}`}
           >
-            {result.win_rate_pct !== null
+            {result.win_rate_pct != null
               ? `${result.win_rate_pct.toFixed(1)}%`
               : "N/A"}
           </div>
@@ -234,7 +234,7 @@ export function StrategyChart({ data }: Props) {
           <div
             className={`font-medium ${getProfitFactorColor(result.profit_factor)}`}
           >
-            {result.profit_factor !== null
+            {result.profit_factor != null
               ? result.profit_factor.toFixed(2)
               : "N/A"}
           </div>
