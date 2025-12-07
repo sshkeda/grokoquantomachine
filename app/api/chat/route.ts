@@ -1,16 +1,27 @@
-import { streamText } from "ai";
+import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  streamText,
+} from "ai";
 import z from "zod";
 import type { BaseUIMessage } from "@/lib/types";
 import { createAgent } from "./agent";
 
 export type ChatBody = z.infer<typeof schema>;
 const schema = z.object({
+  id: z.string(),
   messages: z.array(z.any() as z.ZodType<BaseUIMessage>),
 });
 
 export async function POST(request: Request) {
   const body = schema.parse(await request.json());
 
-  const agent = createAgent(body, request);
-  return streamText(agent).toUIMessageStreamResponse();
+  const stream = createUIMessageStream<BaseUIMessage>({
+    execute: ({ writer }) => {
+      const agent = createAgent(body, request, writer);
+      writer.merge(streamText(agent).toUIMessageStream());
+    },
+  });
+
+  return createUIMessageStreamResponse({ stream });
 }

@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Sandbox } from "@e2b/code-interpreter";
-import { tool } from "ai";
+import { type ToolCallOptions, tool } from "ai";
 import { z } from "zod";
 import { env } from "@/lib/env";
+import type { Context } from "../context";
 
 const searchPostsContent = readFileSync(
   join(process.cwd(), "app", "api", "chat", "workDir", "searchPosts.py"),
@@ -12,7 +12,9 @@ const searchPostsContent = readFileSync(
 
 export const name = "executeCode";
 export const description = `
-Run Python code with uv in an isolated sandbox. Backtrader is available. Each call uses a fresh sandbox.
+Run Python code in a persistent Jupyter kernel. Variables, imports, and state persist across executions within the same sandbox.
+
+The sandbox persists across messages - you can define a variable in one execution and use it in subsequent ones.
 
 You can import and use the \`search_posts\` function to search Twitter/X posts:
 
@@ -33,6 +35,10 @@ ${searchPostsContent}
 type Input = z.infer<typeof inputSchema>;
 export const inputSchema = z.object({
   code: z.string(),
+  reset: z
+    .boolean()
+    .optional()
+    .describe("Reset sandbox to fresh state before running"),
 });
 
 type Output = z.infer<typeof outputSchema>;
@@ -74,67 +80,53 @@ class LogTruncater {
   }
 }
 
-async function* executeExecuteCode(input: Input) {
-  let sandbox: Sandbox | null = null;
-  try {
-    sandbox = await Sandbox.create(env.E2B_TEMPLATE_ALIAS, {
-      timeoutMs: 60_000,
-      requestTimeoutMs: 60_000,
-    });
+async function* executeExecuteCode(input: Input, options: ToolCallOptions) {
+  const context = options.experimental_context as Context;
+  const sandbox = input.reset
+    ? await context.resetSandbox()
+    : await context.getSandbox();
+  const logTruncater = new LogTruncater();
 
-    const logTruncater = new LogTruncater();
+  let notifyUpdate: () => void;
+  let nextUpdate = new Promise<void>((resolve) => {
+    notifyUpdate = resolve;
+  });
 
-    let notifyUpdate = () => {
-      // Placeholder, reassigned by Promise executor
-    };
-    let nextUpdate = new Promise<void>((resolve) => {
+  const handleLog = (type: LogType, data: string) => {
+    logTruncater.add(type, data);
+    notifyUpdate();
+  };
+
+  const runCodePromise = sandbox.runCode(input.code, {
+    onStdout: (msg) => handleLog("stdout", msg.line),
+    onStderr: (msg) => handleLog("stderr", msg.line),
+    envs: { SANDBOX_API_URL: env.SANDBOX_API_URL },
+  });
+
+  let isFinished = false;
+  runCodePromise.finally(() => {
+    isFinished = true;
+    notifyUpdate();
+  });
+
+  while (!isFinished) {
+    await nextUpdate;
+    nextUpdate = new Promise<void>((resolve) => {
       notifyUpdate = resolve;
     });
-
-    const handleLog = (type: LogType, data: string) => {
-      logTruncater.add(type, data);
-      notifyUpdate();
-    };
-
-    const entrypoint = "main.py";
-    await sandbox.files.write(entrypoint, input.code);
-
-    const runCommand = `uv run ${entrypoint}`;
-    const runCodePromise = sandbox.commands.run(runCommand, {
-      onStdout: (data) => handleLog("stdout", data),
-      onStderr: (data) => handleLog("stderr", data),
-      envs: {
-        SANDBOX_API_URL: env.SANDBOX_API_URL,
-      },
-    });
-
-    let isFinished = false;
-    runCodePromise.finally(() => {
-      isFinished = true;
-      notifyUpdate();
-    });
-
-    while (!isFinished) {
-      await nextUpdate;
-      nextUpdate = new Promise<void>((resolve) => {
-        notifyUpdate = resolve;
-      });
-      yield logTruncater.getFormatted();
-    }
-
-    try {
-      await runCodePromise;
-    } catch (error) {
-      console.error(error);
-    }
-
-    return logTruncater.getFormatted();
-  } catch (error) {
-    console.error(error);
-    throw error;
-  } finally {
-    await sandbox?.kill();
+    yield logTruncater.getFormatted();
   }
+
+  const execution = await runCodePromise;
+
+  if (execution.error) {
+    logTruncater.add(
+      "stderr",
+      `${execution.error.name}: ${execution.error.value}\n${execution.error.traceback}`
+    );
+  }
+
+  return logTruncater.getFormatted();
 }
 
 export const executeCode = tool<Input, Output>({

@@ -2,11 +2,8 @@ import { defaultBuildLogger, Template } from "e2b";
 import { env } from "@/lib/env";
 
 const template = Template()
-  .fromPythonImage()
-  // install uv // https://docs.astral.sh/uv/getting-started/installation/
-  .runCmd("curl -LsSf https://astral.sh/uv/install.sh | sh")
-  .runCmd("uv init --python 3.12")
-  .runCmd("uv add backtrader python-dotenv httpx pydantic")
+  .fromTemplate("code-interpreter-v1")
+  .runCmd("pip install backtrader python-dotenv httpx pydantic")
   .copy("app/api/chat/workDir", "/home/user");
 
 const build = await Template.build(template, {
