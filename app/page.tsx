@@ -6,12 +6,16 @@ import PromptForm from "@/components/prompt-form";
 import type { BaseUIMessage } from "@/lib/types";
 
 export default function Home() {
-  const { messages, sendMessage } = useChat<BaseUIMessage>();
+  const { messages, sendMessage, status, stop } = useChat<BaseUIMessage>();
   return (
-    <main className="flex h-screen overflow-hidden">
-      <div className="mx-auto flex max-h-screen w-full max-w-2xl flex-col border-x">
-        <ChatMessages messages={messages} />
-        <PromptForm onSubmit={(message) => sendMessage({ text: message })} />
+    <main className="flex max-h-screen min-h-screen overflow-hidden">
+      <div className="mx-auto flex w-full max-w-2xl flex-col border-x">
+        <ChatMessages messages={messages} status={status} />
+        <PromptForm
+          onSubmit={(message) => sendMessage({ text: message })}
+          status={status}
+          stop={stop}
+        />
       </div>
     </main>
   );

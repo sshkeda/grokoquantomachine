@@ -1,18 +1,16 @@
-import { xai } from "@ai-sdk/xai";
-import { convertToModelMessages, streamText } from "ai";
+import { streamText } from "ai";
 import z from "zod";
 import type { BaseUIMessage } from "@/lib/types";
+import { createAgent } from "./agent";
 
+export type ChatBody = z.infer<typeof schema>;
 const schema = z.object({
   messages: z.array(z.any() as z.ZodType<BaseUIMessage>),
 });
 
 export async function POST(request: Request) {
-  const { messages } = schema.parse(await request.json());
-  const response = streamText({
-    model: xai("grok-4-fast-non-reasoning"),
-    messages: convertToModelMessages<BaseUIMessage>(messages),
-  });
+  const body = schema.parse(await request.json());
 
-  return response.toUIMessageStreamResponse();
+  const agent = createAgent(body, request);
+  return streamText(agent).toUIMessageStreamResponse();
 }

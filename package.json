@@ -25,7 +25,9 @@
     "react-dom": "19.2.0",
     "react-hook-form": "^7.68.0",
     "react-textarea-autosize": "^8.5.9",
+    "streamdown": "^1.6.10",
     "tailwind-merge": "^3.4.0",
+    "use-stick-to-bottom": "^1.1.1",
     "zod": "^4.1.13"
   },
   "devDependencies": {
