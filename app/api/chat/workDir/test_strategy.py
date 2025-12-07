@@ -137,20 +137,27 @@ def run_strategy(
         prices = get_prices("NVDA", date(2024, 1, 1), date(2024, 12, 1))
 
         class TweetBuyStrategy(bt.Strategy):
-            params = (("buy_dates", []),)
+            params = (("buy_dates", []), ("shares_per_buy", 10))
 
             def __init__(self):
-                self.buy_dates = self.params.buy_dates
+                # Convert to date objects; use set for O(1) lookup
+                self.pending = {date.fromisoformat(d) for d in self.params.buy_dates}
+                self.executed = set()
 
             def next(self):
-                dt_str = self.datas[0].datetime.date(0).strftime("%Y-%m-%d")
-                if dt_str in self.buy_dates and not self.position:
-                    self.buy(size=100)
+                current = self.datas[0].datetime.date(0)
+                # Buy on or after target date (handles weekends/holidays)
+                for d in [d for d in self.pending if current >= d]:
+                    if d not in self.executed:
+                        self.buy(size=self.params.shares_per_buy)
+                        self.executed.add(d)
+                        self.pending.discard(d)
 
         result = run_strategy(
             TweetBuyStrategy,
             prices,
             buy_dates=["2024-01-15", "2024-03-20"],
+            shares_per_buy=10,
         )
     """
     # Normalize column names to lowercase for Backtrader
@@ -178,6 +185,8 @@ def run_strategy(
     cerebro.addstrategy(wrapped_strategy, **strategy_params)
     cerebro.broker.setcash(initial_cash)
     cerebro.broker.setcommission(commission=commission)
+    # Note: Market orders execute at next bar's open. Orders placed on the
+    # last bar of data won't fill since there's no next bar to execute.
 
     print(f"Starting Portfolio Value: ${cerebro.broker.getvalue():.2f}")
     cerebro.run()

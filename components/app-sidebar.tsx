@@ -1,6 +1,8 @@
 "use client";
 
 import { Plus, Sparkle } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChatList } from "@/components/chat-list";
 import {
   Sidebar,
@@ -12,17 +14,10 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useChatId } from "@/hooks/use-chat-id";
 
 export function AppSidebar() {
-  const [currentChatId, setCurrentChatId] = useChatId();
+  const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
-
-  const handleNewChat = () => {
-    setCurrentChatId(null);
-  };
-
-  const isNewChat = !currentChatId;
 
   return (
     <Sidebar collapsible="icon">
@@ -43,15 +38,17 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
+              asChild
               className="justify-start group-data-[collapsible=icon]:justify-center"
-              isActive={isNewChat}
-              onClick={handleNewChat}
+              isActive={pathname === "/"}
               tooltip="New Chat"
             >
-              <Plus />
-              <span className="group-data-[collapsible=icon]:hidden">
-                New Chat
-              </span>
+              <Link href="/">
+                <Plus />
+                <span className="group-data-[collapsible=icon]:hidden">
+                  New Chat
+                </span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

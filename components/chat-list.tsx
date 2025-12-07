@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtomValue, useSetAtom } from "jotai";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChatListItem } from "@/components/chat-list-item";
 import { DeleteChatDialog } from "@/components/delete-chat-dialog";
@@ -10,12 +11,12 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
 } from "@/components/ui/sidebar";
-import { useChatId } from "@/hooks/use-chat-id";
 import { chatsAtom, deleteChatAtom, updateChatTitleAtom } from "@/lib/atoms";
 
 export function ChatList() {
   const chats = useAtomValue(chatsAtom);
-  const [currentChatId, setCurrentChatId] = useChatId();
+  const { chatId } = useParams<{ chatId?: string }>();
+  const router = useRouter();
   const deleteChat = useSetAtom(deleteChatAtom);
   const updateChatTitle = useSetAtom(updateChatTitleAtom);
 
@@ -23,9 +24,8 @@ export function ChatList() {
 
   const handleConfirmDelete = () => {
     if (chatToDelete) {
-      // If deleting the current chat, navigate to new chat
-      if (chatToDelete === currentChatId) {
-        setCurrentChatId(null);
+      if (chatToDelete === chatId) {
+        router.push("/");
       }
       deleteChat(chatToDelete);
       setChatToDelete(null);
@@ -43,11 +43,11 @@ export function ChatList() {
             {sortedChats.map((chat) => (
               <ChatListItem
                 chat={chat}
-                isActive={chat.id === currentChatId}
+                isActive={chat.id === chatId}
                 key={chat.id}
                 onDelete={() => setChatToDelete(chat.id)}
                 onEdit={(title) => updateChatTitle({ id: chat.id, title })}
-                onSelect={() => setCurrentChatId(chat.id)}
+                onSelect={() => router.push(`/chat/${chat.id}`)}
               />
             ))}
           </SidebarMenu>
