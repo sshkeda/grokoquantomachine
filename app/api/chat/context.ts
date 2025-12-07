@@ -141,6 +141,7 @@ export class Context {
       "For straightforward coding-only tasks, do as much work as possible in a single tool call instead of splitting execution (one combined code run > many tiny steps).",
       "For research-style tasks (news, events, web/tweet analysis), use a two-phase pattern: first run code to gather and summarize the research, then in a separate executeCode call (if still appropriate) build and backtest the trading strategy informed by that research.",
       "The sandbox already has these Python packages installed: backtrader, python-dotenv, httpx, pydantic, yfinance (and their dependencies like pandas, numpy, and requests). Use them without reinstalling.",
+      "Use search_posts.search_posts(query) to search X posts and search_news.search_news(query) to search X news stories. Both are pre-installed in the sandbox.",
       "Follow the persona and verbosity rules below even if older comments or docstrings inside the Python files suggest different behavior.",
     ];
 

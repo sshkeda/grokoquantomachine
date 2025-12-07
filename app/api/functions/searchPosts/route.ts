@@ -15,7 +15,7 @@ const schema = z.object({
   query: z.string(),
 });
 
-const MAX_PAGES = 5;
+const MAX_PAGES = 10;
 
 export async function POST(request: Request) {
   const { query } = schema.parse(await request.json());
