@@ -6,7 +6,7 @@ import PromptForm from "@/components/prompt-form";
 export default function Home() {
   return (
     <main className="flex h-screen overflow-hidden">
-      <div className="max-w-2xl mx-auto flex w-full flex-col max-h-screen">
+      <div className="mx-auto flex max-h-screen w-full max-w-2xl flex-col">
         <ChatMessages />
         <PromptForm />
       </div>
