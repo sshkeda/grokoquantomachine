@@ -12,10 +12,9 @@ const RANDOM_STRATEGY_PROMPT =
   "Search for today's top financial news and trending topics, then create a unique and creative trading strategy based on what you find. Be creative with the entry/exit signals and pick interesting tickers that relate to the news.";
 
 const PROMPT_IDEAS = [
-  "Backtest buying TSLA whenever Elon Musk tweets about rockets or Mars",
+  "Backtest buying TSLA whenever SpaceX has a successful rocket launch",
   "Backtest shorting meme stocks when wallstreetbets tweet volume spikes 3x",
   "Backtest buying NVDA when Jensen Huang tweets about AI breakthroughs",
-  "Backtest buying Bitcoin when Michael Saylor tweets about buying more BTC",
 ];
 
 type ChatProps = {

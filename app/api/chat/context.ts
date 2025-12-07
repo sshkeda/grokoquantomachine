@@ -211,6 +211,16 @@ export class Context {
       "- When search_news returns multiple relevant stories, synthesize them for the user: highlight the main themes, affected tickers, and rough timelines before jumping into any strategy or backtest.",
     ].join("\n");
 
+    const xSearchQuerySection = [
+      "### X Search query rules — KEEP IT SIMPLE",
+      "- Prefer the simplest possible query. Start with just keywords, a cashtag, or a hashtag. Only add operators if you truly need them.",
+      '- Good simple examples: "$TSLA", "$AAPL earnings", "#bitcoin", "nvidia AI".',
+      "- Cashtags ($) MUST have a symbol immediately after: $TSLA is valid, $ alone is INVALID.",
+      "- FORBIDDEN operators (cause API errors): min_faves, min_favorites, min_retweets, since:, until:. NEVER use these.",
+      "- Avoid: lang:, has:, is:, place_country:, min_likes, or complex boolean logic unless the user explicitly asks for filtering. Simple keyword/cashtag queries work best.",
+      "- If you must filter: use -is:retweet to exclude retweets, or lang:en for English only, but default to no filters.",
+    ].join("\n");
+
     const baseSection = baseInstructions.join("\n\n");
     const personaSection = personaInstructions.join("\n\n");
 
@@ -221,6 +231,7 @@ export class Context {
       backtraderBestPracticesSection,
       executionDisciplineSection,
       toolUsageSection,
+      xSearchQuerySection,
     ].join("\n\n");
   }
 }

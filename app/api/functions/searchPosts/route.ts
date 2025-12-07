@@ -31,13 +31,24 @@ export async function POST(request: Request) {
                 tweetFields: ["created_at"],
               }),
             catch: (error) => {
-              console.error(error);
+              console.error("Twitter API Error:", error);
+              if (error && typeof error === "object") {
+                if ("data" in error) {
+                  console.error(
+                    "Error data:",
+                    JSON.stringify(error.data, null, 2)
+                  );
+                }
+                if ("status" in error) {
+                  console.error("Status:", error.status);
+                }
+              }
               throw error;
             },
           }).pipe(
             Effect.retry({
-              schedule: Schedule.exponential("1 second", 2).pipe(
-                Schedule.compose(Schedule.recurs(10))
+              schedule: Schedule.exponential("500 millis", 2).pipe(
+                Schedule.compose(Schedule.recurs(3))
               ),
             })
           )
@@ -52,7 +63,7 @@ export async function POST(request: Request) {
       }
 
       return paginator.posts as Tweet;
-    }).pipe(Effect.timeout("60 seconds"));
+    }).pipe(Effect.timeout("15 seconds"));
 
     const result = await Effect.runPromise(searchEffect);
 

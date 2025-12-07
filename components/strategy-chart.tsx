@@ -9,12 +9,60 @@ import {
   type ISeriesApi,
   type SeriesMarker,
 } from "lightweight-charts";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { StrategyChartData } from "@/lib/types";
 
 type Props = {
   data: StrategyChartData;
 };
+
+const MAX_CANDLES = 1000;
+
+/**
+ * Downsample candlestick data by aggregating adjacent candles.
+ * Preserves OHLC accuracy by taking open from first, close from last,
+ * high as max, low as min within each bucket.
+ */
+function downsampleCandlesticks<
+  T extends {
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+  },
+>(candles: T[], maxPoints: number): T[] {
+  if (candles.length <= maxPoints) {
+    return candles;
+  }
+
+  const bucketSize = Math.ceil(candles.length / maxPoints);
+  const result: T[] = [];
+
+  for (let i = 0; i < candles.length; i += bucketSize) {
+    const bucket = candles.slice(i, Math.min(i + bucketSize, candles.length));
+    if (bucket.length === 0) {
+      continue;
+    }
+
+    const first = bucket[0];
+    const last = bucket.at(-1);
+    if (!last) {
+      continue;
+    }
+
+    result.push({
+      ...last,
+      time: last.time,
+      open: first.open,
+      high: Math.max(...bucket.map((c) => c.high)),
+      low: Math.min(...bucket.map((c) => c.low)),
+      close: last.close,
+    });
+  }
+
+  return result;
+}
 
 function getSharpeColor(sharpe: number | null | undefined): string {
   if (sharpe === null || sharpe === undefined) {
@@ -42,15 +90,15 @@ function getDrawdownColor(drawdown: number | null | undefined): string {
   return "text-red-500";
 }
 
-function getWinRateColor(winRate: number | null): string {
-  if (winRate === null) {
+function getWinRateColor(winRate: number | null | undefined): string {
+  if (winRate === null || winRate === undefined) {
     return "text-neutral-500";
   }
   return winRate >= 50 ? "text-green-500" : "text-red-500";
 }
 
-function getProfitFactorColor(pf: number | null): string {
-  if (pf === null) {
+function getProfitFactorColor(pf: number | null | undefined): string {
+  if (pf === null || pf === undefined) {
     return "text-neutral-500";
   }
   if (pf >= 2) {
@@ -66,13 +114,54 @@ export function StrategyChart({ data }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Memoize downsampled candlestick data
+  const candlestickData = useMemo<CandlestickData[]>(() => {
+    const sampled = downsampleCandlesticks(data.candlestick, MAX_CANDLES);
+    return sampled.map((d) => ({
+      time: d.time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
+  }, [data.candlestick]);
+
+  // Memoize trade markers
+  const markers = useMemo<SeriesMarker<string>[]>(() => {
+    if (data.trades.length === 0) {
+      return [];
+    }
+    return data.trades.map((trade) => ({
+      time: trade.time,
+      position: trade.type === "buy" ? "belowBar" : "aboveBar",
+      color: trade.type === "buy" ? "#22c55e" : "#ef4444",
+      shape: trade.type === "buy" ? "arrowUp" : "arrowDown",
+      text: `${trade.type.toUpperCase()} ${trade.size}`,
+    }));
+  }, [data.trades]);
+
+  // Debounced resize handler
+  const handleResize = useCallback(() => {
+    if (resizeTimeoutRef.current) {
+      clearTimeout(resizeTimeoutRef.current);
+    }
+    resizeTimeoutRef.current = setTimeout(() => {
+      if (containerRef.current && chartRef.current) {
+        chartRef.current.applyOptions({
+          width: containerRef.current.clientWidth,
+        });
+      }
+    }, 100);
+  }, []);
+
+  // Create chart once on mount
   useEffect(() => {
-    if (!containerRef.current) {
+    if (!containerRef.current || chartRef.current) {
       return;
     }
 
-    // Create chart
     const chart = createChart(containerRef.current, {
       layout: {
         background: { color: "#0a0a0a" },
@@ -98,7 +187,6 @@ export function StrategyChart({ data }: Props) {
     });
     chartRef.current = chart;
 
-    // Add candlestick series
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#22c55e",
       downColor: "#ef4444",
@@ -109,46 +197,33 @@ export function StrategyChart({ data }: Props) {
     });
     seriesRef.current = candlestickSeries;
 
-    // Set candlestick data - lightweight-charts accepts 'YYYY-MM-DD' strings for time
-    const candlestickData: CandlestickData[] = data.candlestick.map((d) => ({
-      time: d.time,
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
-    }));
-    candlestickSeries.setData(candlestickData);
-
-    // Add trade markers using v5 API
-    if (data.trades.length > 0) {
-      const markers: SeriesMarker<string>[] = data.trades.map((trade) => ({
-        time: trade.time,
-        position: trade.type === "buy" ? "belowBar" : "aboveBar",
-        color: trade.type === "buy" ? "#22c55e" : "#ef4444",
-        shape: trade.type === "buy" ? "arrowUp" : "arrowDown",
-        text: `${trade.type.toUpperCase()} ${trade.size}`,
-      }));
-      createSeriesMarkers(candlestickSeries, markers);
-    }
-
-    // Fit content
-    chart.timeScale().fitContent();
-
-    // Handle resize
-    const handleResize = () => {
-      if (containerRef.current && chartRef.current) {
-        chartRef.current.applyOptions({
-          width: containerRef.current.clientWidth,
-        });
-      }
-    };
     window.addEventListener("resize", handleResize);
 
     return () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
       window.removeEventListener("resize", handleResize);
       chart.remove();
+      chartRef.current = null;
+      seriesRef.current = null;
     };
-  }, [data]);
+  }, [handleResize]);
+
+  // Update data when it changes (separate from chart creation)
+  useEffect(() => {
+    if (!(seriesRef.current && chartRef.current)) {
+      return;
+    }
+
+    seriesRef.current.setData(candlestickData);
+
+    if (markers.length > 0) {
+      createSeriesMarkers(seriesRef.current, markers);
+    }
+
+    chartRef.current.timeScale().fitContent();
+  }, [candlestickData, markers]);
 
   const { result } = data;
   const isPositive = result.return_pct >= 0;
@@ -224,7 +299,7 @@ export function StrategyChart({ data }: Props) {
           <div
             className={`font-medium ${getWinRateColor(result.win_rate_pct)}`}
           >
-            {result.win_rate_pct !== null
+            {result.win_rate_pct !== null && result.win_rate_pct !== undefined
               ? `${result.win_rate_pct.toFixed(1)}%`
               : "N/A"}
           </div>
@@ -234,7 +309,7 @@ export function StrategyChart({ data }: Props) {
           <div
             className={`font-medium ${getProfitFactorColor(result.profit_factor)}`}
           >
-            {result.profit_factor !== null
+            {result.profit_factor !== null && result.profit_factor !== undefined
               ? result.profit_factor.toFixed(2)
               : "N/A"}
           </div>
