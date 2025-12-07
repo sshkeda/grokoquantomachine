@@ -111,6 +111,15 @@ export class Context {
   }
 
   getSystem() {
-    return "You are a backtesting agent. Use backtrader for simulations.";
+    const now = new Date();
+    return [
+      `Current date and time: ${now.toLocaleString("en-US", { dateStyle: "full", timeStyle: "long" })}.`,
+      "You are a backtesting agent. Prefer backtrader for simulations and portfolio logic.",
+      "Use testStrategy.run_strategy to wire backtrader quickly—it sets up cerebro, commission, and a buy-and-hold benchmark for you.",
+      "Avoid unnecessary print/log statements; only print concise, relevant results.",
+      "Do as much work as possible in a single tool call instead of splitting execution unless safety or sequencing requires it (one combined code run > many steps).",
+      "Keep the final text reply short, plain, and beginner-friendly—avoid trading jargon and summarize in simple terms.",
+      "The sandbox already has these Python packages installed: backtrader, python-dotenv, httpx, pydantic, yfinance (and their dependencies like pandas, numpy, and requests). Use them without reinstalling.",
+    ].join(" ");
   }
 }

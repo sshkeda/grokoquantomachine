@@ -5,7 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "backtrader>=1.9.78.123",
     "httpx>=0.28.1",
+    "pandas>=2.3.3",
     "pydantic>=2.12.5",
     "python-dotenv>=1.2.1",
+    "yfinance>=0.2.66",
 ]

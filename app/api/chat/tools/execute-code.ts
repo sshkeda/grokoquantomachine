@@ -10,25 +10,76 @@ const searchPostsContent = readFileSync(
   "utf-8"
 );
 
+const getPricesContent = readFileSync(
+  join(process.cwd(), "app", "api", "chat", "workDir", "getPrices.py"),
+  "utf-8"
+);
+
+const testStrategyContent = readFileSync(
+  join(process.cwd(), "app", "api", "chat", "workDir", "testStrategy.py"),
+  "utf-8"
+);
+
 export const name = "executeCode";
 export const description = `
 Run Python code in a persistent Jupyter kernel. Variables, imports, and state persist across executions within the same sandbox.
 
 The sandbox persists across messages - you can define a variable in one execution and use it in subsequent ones.
 
-You can import and use the \`search_posts\` function to search Twitter/X posts:
+Prefer a single self-contained code run per request (combine steps instead of multiple calls). Keep chat explanations short, simple, and free of trading jargon for beginners.
+
+## Available Functions
+
+### search_posts - Search Twitter/X posts
 
 \`\`\`python
 from searchPosts import search_posts
 
 # Returns a list of Post objects with id, text, and created_at fields
-posts = search_posts("from:TwitterDev has:media -is:retweet")
+posts = search_posts("from:elonmusk grok")
 \`\`\`
 
-Available types and implementation:
+### get_prices - Fetch historical stock prices
 
 \`\`\`python
+from getPrices import get_prices
+
+# Returns a pandas DataFrame indexed by timestamp with columns:
+# Open, High, Low, Close, Volume
+prices = get_prices("NVDA", "2024-01-01", "2024-12-01", interval="1d")
+\`\`\`
+
+### run_strategy - Backtrader helper
+
+\`\`\`python
+from testStrategy import run_strategy, StrategyResult
+import backtrader as bt
+
+# Define a Strategy subclass and let run_strategy handle cerebro setup
+class MyStrategy(bt.Strategy):
+    def next(self):
+        if not self.position:
+            self.buy(size=10)
+
+result: StrategyResult = run_strategy(MyStrategy, prices, initial_cash=25_000)
+print(result)
+\`\`\`
+
+## Implementation Details
+
+### searchPosts.py
+\`\`\`python
 ${searchPostsContent}
+\`\`\`
+
+### getPrices.py
+\`\`\`python
+${getPricesContent}
+\`\`\`
+
+### testStrategy.py
+\`\`\`python
+${testStrategyContent}
 \`\`\`
 `.trim();
 
@@ -67,11 +118,11 @@ class LogTruncater {
     const stdout = this.logs
       .filter((log) => log.type === "stdout")
       .map((log) => log.data)
-      .join("\n");
+      .join(""); // join "" preserves newlines in the log.data
     const stderr = this.logs
       .filter((log) => log.type === "stderr")
       .map((log) => log.data)
-      .join("\n");
+      .join("");
 
     return {
       stdout: this.truncate(stdout),
@@ -98,9 +149,11 @@ async function* executeExecuteCode(input: Input, options: ToolCallOptions) {
   };
 
   const runCodePromise = sandbox.runCode(input.code, {
-    onStdout: (msg) => handleLog("stdout", msg.line),
-    onStderr: (msg) => handleLog("stderr", msg.line),
-    envs: { SANDBOX_API_URL: env.SANDBOX_API_URL },
+    onStdout: (output) => handleLog("stdout", output.line),
+    onStderr: (output) => handleLog("stderr", output.line),
+    onError: (error) =>
+      handleLog("stderr", `${error.name}: ${error.value}\n${error.traceback}`),
+    envs: { SANDBOX_API_URL: env.SANDBOX_API_URL, PYTHONUNBUFFERED: "1" },
   });
 
   let isFinished = false;

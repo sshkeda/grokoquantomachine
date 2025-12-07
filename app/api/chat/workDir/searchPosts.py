@@ -1,6 +1,7 @@
 # searchPosts.py
 
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 import httpx
 from pydantic import BaseModel, TypeAdapter
@@ -18,14 +19,14 @@ class SearchQuery(BaseModel):
 class Post(BaseModel):
     id: str
     text: str
-    created_at: str
+    created_at: datetime
 
 
 PostList = TypeAdapter(list[Post])
 
 
 def search_posts(query: str) -> list[Post]:
-    """Search posts via the API with pydantic validation."""
+    """Search posts via the API with pydantic validation. Use in a single combined run and keep any user-facing summary simple."""
     validated_query = SearchQuery(query=query)
 
     with httpx.Client() as client:

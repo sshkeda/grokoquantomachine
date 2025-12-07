@@ -3,7 +3,7 @@ import { env } from "@/lib/env";
 
 const template = Template()
   .fromTemplate("code-interpreter-v1")
-  .runCmd("pip install backtrader python-dotenv httpx pydantic")
+  .runCmd("pip install backtrader python-dotenv httpx pydantic yfinance")
   .copy("app/api/chat/workDir", "/home/user");
 
 const build = await Template.build(template, {
