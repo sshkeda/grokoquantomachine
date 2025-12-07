@@ -3,10 +3,18 @@ import { join } from "node:path";
 import { type ToolCallOptions, tool } from "ai";
 import { z } from "zod";
 import { env } from "@/lib/env";
+import type { StrategyChartData } from "@/lib/types";
 import type { Context } from "../context";
+
+const CHART_DATA_PATH = "/tmp/strategy_chart_data.json";
 
 const searchPostsContent = readFileSync(
   join(process.cwd(), "app", "api", "chat", "workDir", "searchPosts.py"),
+  "utf-8"
+);
+
+const webSearchContent = readFileSync(
+  join(process.cwd(), "app", "api", "chat", "workDir", "webSearch.py"),
   "utf-8"
 );
 
@@ -26,7 +34,19 @@ Run Python code in a persistent Jupyter kernel. Variables, imports, and state pe
 
 The sandbox persists across messages - you can define a variable in one execution and use it in subsequent ones.
 
-Prefer a single self-contained code run per request (combine steps instead of multiple calls). Keep chat explanations short, simple, and free of trading jargon for beginners.
+Use this tool only when you truly need to run code (for example, to fetch data, run a backtest, or perform calculations that are tedious or error-prone to do by hand). For conceptual questions, interpreting already-run results, or simple arithmetic, answer directly in chat instead of calling this tool.
+
+Before each executeCode call, briefly plan what you will run and aim to cover all necessary work in that single execution; avoid "thinking by repeatedly calling" this tool.
+
+Prefer a single self-contained code run per request (combine steps instead of multiple calls), except for research-style workflows.
+For research-style tasks (e.g., "what happens if we trade around crashes/news/tweets?"), use two phases:
+- First run code that gathers and summarizes the research (web_search, search_posts, simple calculations) and explain what it suggests.
+- Then, if the idea still looks reasonable, use a separate executeCode call to build and run the actual backtest based on that research.
+
+When you explain results back to the user, follow the chat persona defined in the system prompt:
+- For "Stock Noob", keep explanations short, simple, and free of trading jargon.
+- For "Quant Pro" and "Quant Pro Heavy", provide more detailed quantitative analysis and metrics while still keeping the answer well-structured and skimmable.
+Avoid pasting full scripts in chat; keep most code inside the execution and only surface small, essential snippets if absolutely necessary.
 
 ## Available Functions
 
@@ -37,6 +57,17 @@ from searchPosts import search_posts
 
 # Returns a list of Post objects with id, text, and created_at fields
 posts = search_posts("from:elonmusk grok")
+\`\`\`
+
+### web_search - Search the web
+
+\`\`\`python
+from webSearch import web_search
+
+# Returns a WebSearchResult with text summary and sources list
+result = web_search("latest AI news")
+print(result.text)  # Summary of search results
+print(result.sources)  # List of Source objects with url and title
 \`\`\`
 
 ### get_prices - Fetch historical stock prices
@@ -61,8 +92,16 @@ class MyStrategy(bt.Strategy):
         if not self.position:
             self.buy(size=10)
 
-result: StrategyResult = run_strategy(MyStrategy, prices, initial_cash=25_000)
+# Use label parameter to identify each run when comparing multiple strategies
+result: StrategyResult = run_strategy(MyStrategy, prices, initial_cash=25_000, label="My Strategy")
 print(result)
+\`\`\`
+
+You can run multiple strategies in a single execution and each will generate its own chart:
+
+\`\`\`python
+result1 = run_strategy(Strategy1, prices, label="Conservative")
+result2 = run_strategy(Strategy2, prices, label="Aggressive")
 \`\`\`
 
 ## Implementation Details
@@ -70,6 +109,11 @@ print(result)
 ### searchPosts.py
 \`\`\`python
 ${searchPostsContent}
+\`\`\`
+
+### webSearch.py
+\`\`\`python
+${webSearchContent}
 \`\`\`
 
 ### getPrices.py
@@ -149,6 +193,7 @@ async function* executeExecuteCode(input: Input, options: ToolCallOptions) {
   };
 
   const runCodePromise = sandbox.runCode(input.code, {
+    timeoutMs: 5 * 60 * 1000, // 5 minutes
     onStdout: (output) => handleLog("stdout", output.line),
     onStderr: (output) => handleLog("stderr", output.line),
     onError: (error) =>
@@ -177,6 +222,24 @@ async function* executeExecuteCode(input: Input, options: ToolCallOptions) {
       "stderr",
       `${execution.error.name}: ${execution.error.value}\n${execution.error.traceback}`
     );
+  }
+
+  // Check for strategy chart data and emit it if present
+  try {
+    // E2B files.read() returns a string directly
+    const chartDataContent = await sandbox.files.read(CHART_DATA_PATH);
+    if (chartDataContent) {
+      const chartDataArray = JSON.parse(
+        chartDataContent
+      ) as StrategyChartData[];
+      for (const chartData of chartDataArray) {
+        context.emitStrategyChart(chartData);
+      }
+      // Clean up the file after reading
+      await sandbox.files.remove(CHART_DATA_PATH);
+    }
+  } catch {
+    // File doesn't exist or couldn't be read - that's expected for non-strategy executions
   }
 
   return logTruncater.getFormatted();

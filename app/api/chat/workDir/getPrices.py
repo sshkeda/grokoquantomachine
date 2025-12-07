@@ -22,7 +22,11 @@ def get_prices(
 ) -> pd.DataFrame:
     """
     Fetch historical price data for a ticker using yfinance.
-    Designed for single-pass scripts; keep any explanation to users short and jargon-free.
+    Designed for single-pass scripts inside the sandbox: call it once per experiment, then explain results in chat.
+
+    When you describe the outputs to the user, follow the active persona from the system prompt:
+    - In "Stock Noob" mode, keep explanations short, concrete, and free of jargon.
+    - In "Quant Pro" / "Quant Pro Heavy" modes, feel free to reference returns, volatility, drawdowns, and other metrics.
 
     Args:
         ticker: Stock symbol (e.g., "NVDA", "AAPL", "TSLA")

@@ -1,6 +1,11 @@
-"use client";
-
-import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useMutationState } from "@tanstack/react-query";
+import {
+  Loader2,
+  MessageSquare,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { EditChatTitleForm } from "@/components/edit-chat-title-form";
 import {
@@ -16,6 +21,22 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import type { Chat } from "@/lib/atoms";
+import {
+  type GenerateTitleVariables,
+  generateTitleMutationKey,
+} from "@/lib/mutations";
+import { cn } from "@/lib/utils";
+
+function isGenerateTitleVariables(
+  variables: unknown
+): variables is GenerateTitleVariables {
+  return (
+    typeof variables === "object" &&
+    variables !== null &&
+    "id" in variables &&
+    typeof variables.id === "string"
+  );
+}
 
 type ChatListItemProps = {
   chat: Chat;
@@ -34,15 +55,35 @@ export function ChatListItem({
 }: ChatListItemProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
 
+  const pendingMutationIds = useMutationState({
+    filters: {
+      mutationKey: generateTitleMutationKey,
+      status: "pending",
+    },
+    select: (mutation) => {
+      const variables = mutation.state.variables;
+      return isGenerateTitleVariables(variables) ? variables.id : null;
+    },
+  });
+
+  const isPending = pendingMutationIds.includes(chat.id);
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={isActive}
         onClick={onSelect}
-        tooltip={chat.title}
+        tooltip={isPending ? "Generating title..." : chat.title}
       >
-        <MessageSquare />
-        <span className="truncate">{chat.title}</span>
+        {isPending ? <Loader2 className="animate-spin" /> : <MessageSquare />}
+        <span
+          className={cn(
+            "truncate",
+            isPending ? "animate-pulse text-muted-foreground italic" : ""
+          )}
+        >
+          {chat.title}
+        </span>
       </SidebarMenuButton>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

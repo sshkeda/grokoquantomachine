@@ -2,6 +2,7 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { Streamdown } from "streamdown";
 import { useStickToBottom } from "use-stick-to-bottom";
 import type { BaseUIMessage, BaseUIMessagePart } from "@/lib/types";
+import { StrategyChart } from "./strategy-chart";
 import { ExecuteCodeToolPart } from "./tool-parts";
 import {
   Collapsible,
@@ -90,6 +91,10 @@ function MessagePart(props: {
 
   if (props.part.type === "tool-executeCode") {
     return <ExecuteCodeToolPart part={props.part} />;
+  }
+
+  if (props.part.type === "data-strategyChart") {
+    return <StrategyChart data={props.part.data} />;
   }
 
   return null;

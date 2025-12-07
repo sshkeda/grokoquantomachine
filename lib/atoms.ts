@@ -17,14 +17,19 @@ export const chatsAtom = atomWithStorage<Chat[]>("chats", []);
 
 // Action atoms
 export const createChatAtom = atom(null, (get, set, id: string) => {
+  const chats = get(chatsAtom);
+  const existingChat = chats.find((chat) => chat.id === id);
+  if (existingChat) {
+    return existingChat;
+  }
   const newChat: Chat = {
     id,
-    title: id,
+    title: "New Chat",
     messages: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
-  set(chatsAtom, [...get(chatsAtom), newChat]);
+  set(chatsAtom, [...chats, newChat]);
   return newChat;
 });
 
@@ -43,7 +48,11 @@ export const updateChatTitleAtom = atom(
     const index = chats.findIndex((chat) => chat.id === id);
     if (index !== -1) {
       const newChats = [...chats];
-      newChats[index] = { ...newChats[index], title, updatedAt: Date.now() };
+      newChats[index] = {
+        ...newChats[index],
+        title,
+        updatedAt: Date.now(),
+      };
       set(chatsAtom, newChats);
     }
   }
