@@ -2,6 +2,12 @@ import type { UseChatHelpers } from "@ai-sdk/react";
 import { Streamdown } from "streamdown";
 import { useStickToBottom } from "use-stick-to-bottom";
 import type { BaseUIMessage, BaseUIMessagePart } from "@/lib/types";
+import { ExecuteCodeToolPart } from "./tool-parts";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible";
 
 export default function ChatMessages(props: {
   messages: BaseUIMessage[];
@@ -51,6 +57,39 @@ function MessagePart(props: {
         {props.part.text}
       </Streamdown>
     );
+  }
+
+  if (props.part.type === "reasoning") {
+    return (
+      <Collapsible>
+        <CollapsibleTrigger>Reasoning</CollapsibleTrigger>
+        <CollapsibleContent>{props.part.text}</CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
+  if (props.part.type === "file") {
+    return null;
+  }
+
+  if (props.part.type === "dynamic-tool") {
+    return null;
+  }
+
+  if (props.part.type === "source-url") {
+    return null;
+  }
+
+  if (props.part.type === "step-start") {
+    return null;
+  }
+
+  if (props.part.type === "source-document") {
+    return null;
+  }
+
+  if (props.part.type === "tool-executeCode") {
+    return <ExecuteCodeToolPart part={props.part} />;
   }
 
   return null;
