@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { use, useEffect, useRef } from "react";
 import { generateTitle } from "@/app/actions/generate-title";
 import { Chat } from "@/components/chat";
@@ -26,6 +26,7 @@ export default function ChatPage({
   params: Promise<{ chatId: string }>;
 }) {
   const { chatId } = use(params);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const chats = useAtomValue(chatsAtom);
   const createChat = useSetAtom(createChatAtom);
@@ -62,11 +63,13 @@ export default function ChatPage({
       initializedRef.current = true;
       titleMutation.mutate({ prompt, id: chatId });
       sendMessage({ text: prompt }, { body: { model } });
+      router.replace(`/chat/${chatId}`);
     }
   }, [
     chat,
     chatId,
     createChat,
+    router,
     searchParams,
     sendMessage,
     setMessages,

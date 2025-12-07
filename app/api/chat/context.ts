@@ -139,9 +139,12 @@ export class Context {
       "Use test_strategy.run_strategy as the main helper to wire backtrader quickly—it sets up cerebro, commission, a buy-and-hold benchmark, and chart data for you.",
       "Avoid unnecessary print/log statements; only print concise, relevant results that are needed for the chat explanation.",
       "For straightforward coding-only tasks, do as much work as possible in a single tool call instead of splitting execution (one combined code run > many tiny steps).",
-      "For research-style tasks (news, events, web/tweet analysis), use a two-phase pattern: first run code to gather and summarize the research, then in a separate executeCode call (if still appropriate) build and backtest the trading strategy informed by that research.",
+      "For research-style tasks (news, events, web/tweet analysis), use a two-phase pattern: first run code to gather and summarize the research (including calling search_news and/or search_posts as needed), then in a separate executeCode call (if still appropriate) build and backtest the trading strategy informed by that research.",
       "The sandbox already has these Python packages installed: backtrader, python-dotenv, httpx, pydantic, yfinance (and their dependencies like pandas, numpy, and requests). Use them without reinstalling.",
       "Use search_posts.search_posts(query) to search X posts and search_news.search_news(query) to search X news stories. Both are pre-installed in the sandbox.",
+      'When the user asks about catalysts, headlines, "latest news", or what recently happened to a ticker, you MUST prefer calling search_news (and optionally search_posts) over relying on your own memory or generic assumptions—ground your answer in actual fetched articles.',
+      'If the user explicitly mentions "X news" or asks you to "search X news" (for example, "search X news for the latest AI advancements"), you MUST implement that in Python by calling search_news.search_news (and optionally search_posts.search_posts) instead of using the generic web_search helper for that request.',
+      "For conceptual or timeless questions (e.g., how earnings reports usually affect volatility), you may skip search_news and answer from your internal knowledge to keep responses fast.",
       "Follow the persona and verbosity rules below even if older comments or docstrings inside the Python files suggest different behavior.",
     ];
 
@@ -190,6 +193,8 @@ export class Context {
       "Before each executeCode call, pause and plan what code you will run and check whether the question can instead be answered by reasoning over existing results, doing simple math, or explaining concepts directly in chat.",
       "Avoid using executeCode for small formatting tweaks, renaming variables, or re-running nearly identical snippets; reuse prior outputs and the persistent sandbox state whenever possible.",
       "When you do need executeCode, batch related work into as few calls as possible per user request (ideally a single well-planned execution), instead of many incremental runs.",
+      "Prefer search_news.search_news and search_posts.search_posts as your primary tools for grounding any discussion of recent events, news flow, or social sentiment instead of guessing headlines from memory.",
+      "When search_news returns multiple relevant stories, synthesize them for the user: highlight the main themes, affected tickers, and rough timelines before jumping into any strategy or backtest.",
     ];
 
     return [
