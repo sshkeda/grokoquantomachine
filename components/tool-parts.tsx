@@ -32,14 +32,14 @@ export function ExecuteCodeToolPart(props: { part: ExecuteCodePart }) {
           props.part.output.stdout.length > 0 && (
             <div className="flex flex-col">
               <span className="text-muted-foreground text-xs">stdout</span>
-              <CodeBlock code={props.part.output.stdout} controls={false} />
+              <CodeBlock code={props.part.output.stdout} />
             </div>
           )}
         {props.part.state === "output-available" &&
           props.part.output.stderr.length > 0 && (
             <div className="flex flex-col">
               <span className="text-muted-foreground text-xs">stderr</span>
-              <CodeBlock code={props.part.output.stderr} controls={false} />
+              <CodeBlock code={props.part.output.stderr} />
             </div>
           )}
         {props.part.state === "output-error" && (

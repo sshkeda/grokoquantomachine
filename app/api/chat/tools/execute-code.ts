@@ -1,11 +1,33 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { Sandbox } from "@e2b/code-interpreter";
 import { tool } from "ai";
 import { z } from "zod";
 import { env } from "@/lib/env";
 
+const searchPostsContent = readFileSync(
+  join(process.cwd(), "app", "api", "chat", "workDir", "searchPosts.py"),
+  "utf-8"
+);
+
 export const name = "executeCode";
 export const description = `
 Run Python code with uv in an isolated sandbox. Backtrader is available. Each call uses a fresh sandbox.
+
+You can import and use the \`search_posts\` function to search Twitter/X posts:
+
+\`\`\`python
+from searchPosts import search_posts
+
+# Returns a list of Post objects with id, text, and created_at fields
+posts = search_posts("from:TwitterDev has:media -is:retweet")
+\`\`\`
+
+Available types and implementation:
+
+\`\`\`python
+${searchPostsContent}
+\`\`\`
 `.trim();
 
 type Input = z.infer<typeof inputSchema>;
@@ -81,6 +103,9 @@ async function* executeExecuteCode(input: Input) {
     const runCodePromise = sandbox.commands.run(runCommand, {
       onStdout: (data) => handleLog("stdout", data),
       onStderr: (data) => handleLog("stderr", data),
+      envs: {
+        SANDBOX_API_URL: env.SANDBOX_API_URL,
+      },
     });
 
     let isFinished = false;
@@ -97,7 +122,11 @@ async function* executeExecuteCode(input: Input) {
       yield logTruncater.getFormatted();
     }
 
-    await runCodePromise;
+    try {
+      await runCodePromise;
+    } catch (error) {
+      console.error(error);
+    }
 
     return logTruncater.getFormatted();
   } catch (error) {

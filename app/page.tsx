@@ -9,7 +9,7 @@ export default function Home() {
   const { messages, sendMessage, status, stop } = useChat<BaseUIMessage>();
   return (
     <div className="flex max-h-screen min-h-screen w-full flex-col overflow-hidden">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col border-x">
+      <div className="mx-auto flex max-h-screen min-h-screen w-full max-w-2xl flex-1 flex-col border-x">
         <ChatMessages messages={messages} status={status} />
         <PromptForm
           onSubmit={(message) => sendMessage({ text: message })}
