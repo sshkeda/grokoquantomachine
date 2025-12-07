@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "check": "tsgo --noEmit --incremental false && bun lint --fix"
+    "check": "bun format && tsgo --noEmit --incremental false && bun lint --fix"
   },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.8",
