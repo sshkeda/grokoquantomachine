@@ -1,4 +1,4 @@
-# searchPosts.py
+# search_posts.py
 
 import os
 from datetime import datetime

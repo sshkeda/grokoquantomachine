@@ -9,22 +9,22 @@ import type { Context } from "../context";
 const CHART_DATA_PATH = "/tmp/strategy_chart_data.json";
 
 const searchPostsContent = readFileSync(
-  join(process.cwd(), "app", "api", "chat", "workDir", "searchPosts.py"),
+  join(process.cwd(), "app", "api", "chat", "workDir", "search_posts.py"),
   "utf-8"
 );
 
 const webSearchContent = readFileSync(
-  join(process.cwd(), "app", "api", "chat", "workDir", "webSearch.py"),
+  join(process.cwd(), "app", "api", "chat", "workDir", "web_search.py"),
   "utf-8"
 );
 
 const getPricesContent = readFileSync(
-  join(process.cwd(), "app", "api", "chat", "workDir", "getPrices.py"),
+  join(process.cwd(), "app", "api", "chat", "workDir", "get_prices.py"),
   "utf-8"
 );
 
 const testStrategyContent = readFileSync(
-  join(process.cwd(), "app", "api", "chat", "workDir", "testStrategy.py"),
+  join(process.cwd(), "app", "api", "chat", "workDir", "test_strategy.py"),
   "utf-8"
 );
 
@@ -53,7 +53,7 @@ Avoid pasting full scripts in chat; keep most code inside the execution and only
 ### search_posts - Search Twitter/X posts
 
 \`\`\`python
-from searchPosts import search_posts
+from search_posts import search_posts
 
 # Returns a list of Post objects with id, text, and created_at fields
 posts = search_posts("from:elonmusk grok")
@@ -62,7 +62,7 @@ posts = search_posts("from:elonmusk grok")
 ### web_search - Search the web
 
 \`\`\`python
-from webSearch import web_search
+from web_search import web_search
 
 # Returns a WebSearchResult with text summary and sources list
 result = web_search("latest AI news")
@@ -73,7 +73,7 @@ print(result.sources)  # List of Source objects with url and title
 ### get_prices - Fetch historical stock prices
 
 \`\`\`python
-from getPrices import get_prices
+from get_prices import get_prices
 
 # Returns a pandas DataFrame indexed by timestamp with columns:
 # Open, High, Low, Close, Volume
@@ -83,7 +83,7 @@ prices = get_prices("NVDA", "2024-01-01", "2024-12-01", interval="1d")
 ### run_strategy - Backtrader helper
 
 \`\`\`python
-from testStrategy import run_strategy, StrategyResult
+from test_strategy import run_strategy, StrategyResult
 import backtrader as bt
 
 # Define a Strategy subclass and let run_strategy handle cerebro setup
@@ -106,22 +106,22 @@ result2 = run_strategy(Strategy2, prices, label="Aggressive")
 
 ## Implementation Details
 
-### searchPosts.py
+### search_posts.py
 \`\`\`python
 ${searchPostsContent}
 \`\`\`
 
-### webSearch.py
+### web_search.py
 \`\`\`python
 ${webSearchContent}
 \`\`\`
 
-### getPrices.py
+### get_prices.py
 \`\`\`python
 ${getPricesContent}
 \`\`\`
 
-### testStrategy.py
+### test_strategy.py
 \`\`\`python
 ${testStrategyContent}
 \`\`\`

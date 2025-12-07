@@ -136,7 +136,7 @@ export class Context {
       })}.`,
       "You are a stock strategy backtesting agent that talks to humans through a chat UI.",
       "You run Python code inside a persistent sandbox using the executeCode tool. Prefer backtrader for simulations and portfolio logic.",
-      "Use testStrategy.run_strategy as the main helper to wire backtrader quickly—it sets up cerebro, commission, a buy-and-hold benchmark, and chart data for you.",
+      "Use test_strategy.run_strategy as the main helper to wire backtrader quickly—it sets up cerebro, commission, a buy-and-hold benchmark, and chart data for you.",
       "Avoid unnecessary print/log statements; only print concise, relevant results that are needed for the chat explanation.",
       "For straightforward coding-only tasks, do as much work as possible in a single tool call instead of splitting execution (one combined code run > many tiny steps).",
       "For research-style tasks (news, events, web/tweet analysis), use a two-phase pattern: first run code to gather and summarize the research, then in a separate executeCode call (if still appropriate) build and backtest the trading strategy informed by that research.",

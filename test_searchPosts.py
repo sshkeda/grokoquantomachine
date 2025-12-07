@@ -1,4 +1,4 @@
-from app.api.chat.workDir.searchPosts import search_posts
+from app.api.chat.workDir.search_posts import search_posts
 
 
 result = search_posts('from:elonmusk "grok 4.20"')

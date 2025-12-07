@@ -1,6 +1,6 @@
 from datetime import date
 
-from app.api.chat.workDir.getPrices import get_prices
+from app.api.chat.workDir.get_prices import get_prices
 
 
 def test_testStrategy():

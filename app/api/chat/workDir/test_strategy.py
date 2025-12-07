@@ -1,4 +1,4 @@
-# testStrategy.py
+# test_strategy.py
 
 import json
 from pathlib import Path
@@ -132,7 +132,7 @@ def run_strategy(
 
     Example:
         from datetime import date
-        from getPrices import get_prices
+        from get_prices import get_prices
 
         prices = get_prices("NVDA", date(2024, 1, 1), date(2024, 12, 1))
 

@@ -1,4 +1,4 @@
-# getPrices.py
+# get_prices.py
 
 from datetime import date
 from typing import Literal
