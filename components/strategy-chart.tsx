@@ -299,7 +299,7 @@ export function StrategyChart({ data }: Props) {
           <div
             className={`font-medium ${getWinRateColor(result.win_rate_pct)}`}
           >
-            {result.win_rate_pct !== null
+            {result.win_rate_pct !== null && result.win_rate_pct !== undefined
               ? `${result.win_rate_pct.toFixed(1)}%`
               : "N/A"}
           </div>
@@ -309,7 +309,7 @@ export function StrategyChart({ data }: Props) {
           <div
             className={`font-medium ${getProfitFactorColor(result.profit_factor)}`}
           >
-            {result.profit_factor !== null
+            {result.profit_factor !== null && result.profit_factor !== undefined
               ? result.profit_factor.toFixed(2)
               : "N/A"}
           </div>
