@@ -58,6 +58,7 @@ export default function PromptForm(props: {
   });
 
   const handleSubmit = (data: z.infer<typeof formSchema>) => {
+    if (props.status !== "ready") return;
     props.onSubmit(data.message);
     form.reset();
   };
@@ -65,6 +66,7 @@ export default function PromptForm(props: {
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
+      if (props.status !== "ready") return;
       form.handleSubmit(handleSubmit)();
     }
   };
