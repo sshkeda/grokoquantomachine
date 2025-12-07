@@ -8,8 +8,8 @@ import type { BaseUIMessage } from "@/lib/types";
 export default function Home() {
   const { messages, sendMessage, status, stop } = useChat<BaseUIMessage>();
   return (
-    <main className="flex max-h-screen min-h-screen overflow-hidden">
-      <div className="mx-auto flex w-full max-w-2xl flex-col border-x">
+    <div className="flex max-h-screen min-h-screen w-full flex-col overflow-hidden">
+      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col border-x">
         <ChatMessages messages={messages} status={status} />
         <PromptForm
           onSubmit={(message) => sendMessage({ text: message })}
@@ -17,6 +17,6 @@ export default function Home() {
           stop={stop}
         />
       </div>
-    </main>
+    </div>
   );
 }
