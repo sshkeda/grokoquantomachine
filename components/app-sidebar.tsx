@@ -1,7 +1,8 @@
 "use client";
 
-import { Home } from "lucide-react";
+import { Home, Plus } from "lucide-react";
 import Link from "next/link";
+import { ChatList } from "@/components/chat-list";
 import {
   Sidebar,
   SidebarContent,
@@ -11,8 +12,17 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useChatId } from "@/hooks/use-chat-id";
 
 export function AppSidebar() {
+  const [currentChatId, setCurrentChatId] = useChatId();
+
+  const handleNewChat = () => {
+    setCurrentChatId(null);
+  };
+
+  const isNewChat = !currentChatId;
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -25,9 +35,21 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={isNewChat}
+              onClick={handleNewChat}
+              tooltip="New Chat"
+            >
+              <Plus />
+              <span>New Chat</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent />
+      <SidebarContent>
+        <ChatList />
+      </SidebarContent>
       <SidebarRail />
     </Sidebar>
   );

@@ -2,16 +2,30 @@
 
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUp, Loader2, Plus, Square } from "lucide-react";
+import { ArrowUp, Loader2, Square } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
 import TextareaAutosize from "react-textarea-autosize";
 import { z } from "zod";
+import {
+  DEFAULT_MODEL,
+  MODEL_OPTIONS,
+  type ModelId,
+  modelIdSchema,
+} from "@/lib/models";
 import type { BaseUIMessage } from "@/lib/types";
 import { Button } from "./ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 const formSchema = z.object({
   message: z.string().min(1, "Message is required"),
+  model: modelIdSchema,
 });
 
 function PromptFormSubmitButton(props: {
@@ -46,7 +60,7 @@ function PromptFormSubmitButton(props: {
 }
 
 export default function PromptForm(props: {
-  onSubmit: (message: string) => void;
+  onSubmit: (message: string, model: ModelId) => void;
   status: UseChatHelpers<BaseUIMessage>["status"];
   stop: UseChatHelpers<BaseUIMessage>["stop"];
 }) {
@@ -54,6 +68,7 @@ export default function PromptForm(props: {
     resolver: zodResolver(formSchema),
     defaultValues: {
       message: "",
+      model: DEFAULT_MODEL,
     },
   });
 
@@ -61,8 +76,8 @@ export default function PromptForm(props: {
     if (props.status !== "ready") {
       return;
     }
-    props.onSubmit(data.message);
-    form.reset();
+    props.onSubmit(data.message, data.model);
+    form.reset({ message: "", model: data.model });
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -94,9 +109,24 @@ export default function PromptForm(props: {
           )}
         />
         <div className="flex justify-between px-1 pb-1">
-          <Button size="icon" type="button" variant="outline">
-            <Plus />
-          </Button>
+          <Controller
+            control={form.control}
+            name="model"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODEL_OPTIONS.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
           <PromptFormSubmitButton
             isValid={form.formState.isValid}
             status={props.status}

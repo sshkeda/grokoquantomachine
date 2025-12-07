@@ -20,7 +20,7 @@ export function createAgent(
   request: Request,
   writer: UIMessageStreamWriter<BaseUIMessage>
 ) {
-  const context = new Context(body.messages);
+  const context = new Context(body);
   context.writer = writer;
 
   return {
