@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     }).pipe(
       Effect.retry({
         schedule: Schedule.exponential("1 second", 2).pipe(
-          Schedule.compose(Schedule.recurs(5))
+          Schedule.compose(Schedule.recurs(10))
         ),
       }),
       Effect.timeout("60 seconds")

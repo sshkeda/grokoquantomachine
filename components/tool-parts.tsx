@@ -13,9 +13,9 @@ type ExecuteCodePart = ToolUIPart<Pick<BaseUITools, "executeCode">>;
 export function ExecuteCodeToolPart(props: { part: ExecuteCodePart }) {
   return (
     <Collapsible className="my-2 rounded-lg border p-2">
-      <CollapsibleTrigger className="flex items-center gap-2">
+      <CollapsibleTrigger className="flex items-center gap-2 text-start">
         <ToolStatusIcon state={props.part.state} />
-        <span>Execute Code</span>
+        <span>{props.part.input?.label ?? ""}</span>
       </CollapsibleTrigger>
       <CollapsibleContent className="flex flex-col gap-4 pt-4">
         {props.part.input !== undefined && (

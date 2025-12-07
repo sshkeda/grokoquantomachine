@@ -24,6 +24,10 @@ export type StrategyResult = {
   return_pct: number;
   buy_hold_final_value: number;
   buy_hold_return_pct: number;
+  sharpe_ratio: number | null; // null if insufficient data
+  max_drawdown_pct: number | null; // null if insufficient data
+  win_rate_pct: number | null; // null if no trades
+  profit_factor: number | null; // null if no trades or no losses
 };
 
 export type StrategyChartData = {

@@ -23,6 +23,10 @@ class StrategyResult(BaseModel):
     return_pct: float
     buy_hold_final_value: float
     buy_hold_return_pct: float
+    sharpe_ratio: float
+    max_drawdown_pct: float
+    win_rate_pct: float | None  # None if no trades
+    profit_factor: float | None  # None if no trades or no losses
 
 
 # Global list to collect trades from the wrapped strategy
@@ -185,11 +189,15 @@ def run_strategy(
     cerebro.addstrategy(wrapped_strategy, **strategy_params)
     cerebro.broker.setcash(initial_cash)
     cerebro.broker.setcommission(commission=commission)
+    # Add analyzers for metrics
+    cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name="sharpe", riskfreerate=0.0)
+    cerebro.addanalyzer(bt.analyzers.DrawDown, _name="drawdown")
+    cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="trades")
     # Note: Market orders execute at next bar's open. Orders placed on the
     # last bar of data won't fill since there's no next bar to execute.
 
     print(f"Starting Portfolio Value: ${cerebro.broker.getvalue():.2f}")
-    cerebro.run()
+    results = cerebro.run()
     final_value = cerebro.broker.getvalue()
     print(f"Final Portfolio Value: ${final_value:.2f}")
 
@@ -210,12 +218,60 @@ def run_strategy(
     print(f"Buy & Hold Return: {bh_return_pct:.2f}%")
     print(f"\nStrategy vs Buy & Hold: {return_pct - bh_return_pct:+.2f}%")
 
+    # Extract metrics from analyzers
+    strat = results[0]
+
+    # Sharpe ratio
+    sharpe_analysis = strat.analyzers.sharpe.get_analysis()
+    sharpe_ratio = sharpe_analysis.get("sharperatio")
+    sharpe_ratio = float(sharpe_ratio) if sharpe_ratio is not None else 0.0
+    print(f"Sharpe Ratio: {sharpe_ratio:.2f}")
+
+    # Max drawdown
+    drawdown_analysis = strat.analyzers.drawdown.get_analysis()
+    max_drawdown_pct = drawdown_analysis.get("max", {}).get("drawdown", 0.0)
+    print(f"Max Drawdown: {max_drawdown_pct:.2f}%")
+
+    # Trade analysis for win rate and profit factor
+    trade_analysis = strat.analyzers.trades.get_analysis()
+    total_trades = trade_analysis.get("total", {}).get("closed", 0)
+
+    win_rate_pct: float | None = None
+    profit_factor: float | None = None
+
+    if total_trades > 0:
+        won_trades = trade_analysis.get("won", {}).get("total", 0)
+        win_rate_pct = (won_trades / total_trades) * 100
+        print(f"Win Rate: {win_rate_pct:.1f}% ({won_trades}/{total_trades} trades)")
+
+        # Profit factor = gross profits / gross losses
+        gross_profit = trade_analysis.get("won", {}).get("pnl", {}).get("total", 0.0)
+        gross_loss = abs(
+            trade_analysis.get("lost", {}).get("pnl", {}).get("total", 0.0)
+        )
+        if gross_loss > 0:
+            profit_factor = gross_profit / gross_loss
+            print(f"Profit Factor: {profit_factor:.2f}")
+        elif gross_profit > 0:
+            # All winning trades, no losses
+            profit_factor = float("inf")
+            print("Profit Factor: ∞ (no losses)")
+        else:
+            print("Profit Factor: N/A (no closed P&L)")
+    else:
+        print("Win Rate: N/A (no closed trades)")
+        print("Profit Factor: N/A (no closed trades)")
+
     result = StrategyResult(
         starting_value=initial_cash,
         final_value=final_value,
         return_pct=return_pct,
         buy_hold_final_value=bh_final_value,
         buy_hold_return_pct=bh_return_pct,
+        sharpe_ratio=sharpe_ratio,
+        max_drawdown_pct=max_drawdown_pct,
+        win_rate_pct=win_rate_pct,
+        profit_factor=profit_factor if profit_factor != float("inf") else None,
     )
 
     # Export chart data for UI rendering

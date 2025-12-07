@@ -1,7 +1,6 @@
 # search_news.py
 
 import os
-from datetime import datetime
 from dotenv import load_dotenv
 import httpx
 from pydantic import BaseModel, TypeAdapter

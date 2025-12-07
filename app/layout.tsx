@@ -34,7 +34,7 @@ export default async function RootLayout({
     <html lang="en">
       <body
         className={cn(
-          "dark min-h-screen font-sans antialiased",
+          "dark min-h-dvh font-sans antialiased",
           geistSans.variable,
           geistMono.variable
         )}

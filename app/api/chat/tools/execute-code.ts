@@ -130,6 +130,11 @@ ${testStrategyContent}
 type Input = z.infer<typeof inputSchema>;
 export const inputSchema = z.object({
   code: z.string(),
+  label: z
+    .string()
+    .describe(
+      "A short, descriptive label explaining what this code execution does (e.g. 'Fetching NVDA prices', 'Running backtest', 'Searching recent tweets')"
+    ),
   reset: z
     .boolean()
     .optional()

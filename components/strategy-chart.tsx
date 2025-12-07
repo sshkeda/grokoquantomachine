@@ -16,6 +16,52 @@ type Props = {
   data: StrategyChartData;
 };
 
+function getSharpeColor(sharpe: number | null | undefined): string {
+  if (sharpe === null || sharpe === undefined) {
+    return "text-neutral-500";
+  }
+  if (sharpe >= 1) {
+    return "text-green-500";
+  }
+  if (sharpe >= 0) {
+    return "text-yellow-500";
+  }
+  return "text-red-500";
+}
+
+function getDrawdownColor(drawdown: number | null | undefined): string {
+  if (drawdown === null || drawdown === undefined) {
+    return "text-neutral-500";
+  }
+  if (drawdown <= 10) {
+    return "text-green-500";
+  }
+  if (drawdown <= 20) {
+    return "text-yellow-500";
+  }
+  return "text-red-500";
+}
+
+function getWinRateColor(winRate: number | null): string {
+  if (winRate === null) {
+    return "text-neutral-500";
+  }
+  return winRate >= 50 ? "text-green-500" : "text-red-500";
+}
+
+function getProfitFactorColor(pf: number | null): string {
+  if (pf === null) {
+    return "text-neutral-500";
+  }
+  if (pf >= 2) {
+    return "text-green-500";
+  }
+  if (pf >= 1) {
+    return "text-yellow-500";
+  }
+  return "text-red-500";
+}
+
 export function StrategyChart({ data }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -150,6 +196,47 @@ export function StrategyChart({ data }: Props) {
           >
             {beatsBuyHold ? "+" : ""}
             {(result.return_pct - result.buy_hold_return_pct).toFixed(2)}%
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4 border-neutral-800 border-t p-4 text-sm md:grid-cols-4">
+        <div>
+          <div className="text-neutral-500">Sharpe Ratio</div>
+          <div className={`font-medium ${getSharpeColor(result.sharpe_ratio)}`}>
+            {result.sharpe_ratio !== null && result.sharpe_ratio !== undefined
+              ? result.sharpe_ratio.toFixed(2)
+              : "N/A"}
+          </div>
+        </div>
+        <div>
+          <div className="text-neutral-500">Max Drawdown</div>
+          <div
+            className={`font-medium ${getDrawdownColor(result.max_drawdown_pct)}`}
+          >
+            {result.max_drawdown_pct !== null &&
+            result.max_drawdown_pct !== undefined
+              ? `-${result.max_drawdown_pct.toFixed(2)}%`
+              : "N/A"}
+          </div>
+        </div>
+        <div>
+          <div className="text-neutral-500">Win Rate</div>
+          <div
+            className={`font-medium ${getWinRateColor(result.win_rate_pct)}`}
+          >
+            {result.win_rate_pct !== null
+              ? `${result.win_rate_pct.toFixed(1)}%`
+              : "N/A"}
+          </div>
+        </div>
+        <div>
+          <div className="text-neutral-500">Profit Factor</div>
+          <div
+            className={`font-medium ${getProfitFactorColor(result.profit_factor)}`}
+          >
+            {result.profit_factor !== null
+              ? result.profit_factor.toFixed(2)
+              : "N/A"}
           </div>
         </div>
       </div>
